@@ -44,7 +44,6 @@ Per category:
 | Books     | Goodreads, Amazon, NYTimes                    |
 | Courses   | Udemy, Coursera, edX, Class Central           |
 | Products  | Amazon, Wirecutter, TechRadar, CNET           |
-| All       | Reddit                                        |
 
 ### 4. **Frontend**
 
@@ -151,6 +150,7 @@ Per category:
 
 ## 🌱 Future Features
 
+* Reddit as a data source
 * Personalized lists
 * Real-time updates
 * AI-powered query understanding
