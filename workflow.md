@@ -61,6 +61,7 @@ Types we use:
 * `chore:` → maintenance (configs, deps, etc.)
 * `style:` → UI/design changes
 * `test:` → adding/updating tests
+* `docs:` → documentation updates
 
 ---
 
