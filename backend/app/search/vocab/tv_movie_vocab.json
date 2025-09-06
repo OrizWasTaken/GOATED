@@ -1,0 +1,66 @@
+{
+  "schema_version": "1.0",
+  "entity_labels": {
+    "TYPE": "type",
+    "GENRE": "genre",
+    "PLATFORM": "platform",
+    "ERA": "era",
+    "REGION": "region"
+  },
+  "vocabulary": {
+    "type": {
+      "movie": ["movie", "film", "feature", "motion picture", "tv movie"],
+      "series": ["series", "tv series", "show", "tv show"]
+    },
+    "genre": {
+      "action": ["action", "action-packed"],
+      "adventure": ["adventure"],
+      "animation": ["animation", "animated"],
+      "comedy": ["comedy", "funny", "parody"],
+      "crime": ["crime", "detective", "heist", "gangster"],
+      "documentary": ["documentary", "doc", "docuseries", "factual"],
+      "family": ["family", "family-friendly"],
+      "fantasy": ["fantasy", "magic", "mythology", "folklore"],
+      "history": ["history", "historical", "period piece"],
+      "horror": ["horror", "scary", "slasher", "creepy"],
+      "music": ["music", "musical"],
+      "mystery": ["mystery", "whodunit", "suspense"],
+      "romance": ["romance", "love"],
+      "sci_fi": ["sci-fi", "science fiction", "scifi", "futuristic", "cyberpunk"],
+      "sport": ["sport", "athletic"],
+      "reality": ["reality-tv", "reality", "unscripted"],
+      "thriller": ["thriller"],
+      "western": ["western", "cowboy"],
+      "war": ["war", "military"]
+    },
+    "platform": {
+      "netflix": ["netflix", "nf"],
+      "hbo_max": ["hbo max", "hbomax", "hbo"],
+      "disney_plus": ["disney+", "disney plus", "disneyplus"],
+      "amazon_prime": ["amazon prime", "prime video", "primevideo", "prime"],
+      "hulu": ["hulu"],
+      "apple_tv_plus": ["apple tv+", "apple tv plus", "appletv+"],
+      "peacock": ["peacock"],
+      "paramount+": ["paramount+", "paramount plus"],
+      "youtube": ["youtube", "youtube movies", "yt"],
+      "imdb_tv": ["imdb", "imdb tv"]
+    },
+    "era": {
+      "latest": ["latest", "new", "newest", "recent", "recently released", "new releases"],
+      "2020s": ["2020s", "2020's", "2020s movies", "2020s shows", "2020"],
+      "2010s": ["2010s", "2010's", "2010"],
+      "2000s": ["2000s", "2000's", "2000"],
+      "1990s": ["1990s", "90s", "1990's", "90's"],
+      "classic": ["classic", "classics", "all time", "all-time"]
+    },
+    "region": {
+      "us": ["us", "usa", "american", "u.s.", "u.s.a."],
+      "uk": ["uk", "british", "britain", "england", "brit"],
+      "japan": ["japan", "japanese"],
+      "south_korea": ["k-drama", "kdrama", "south korea", "korean"],
+      "india": ["india", "indian", "bollywood", "hindi"],
+      "france": ["france", "french"],
+      "germany": ["germany", "german"]
+    }
+  }
+}
