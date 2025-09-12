@@ -1,6 +1,9 @@
 import json
+from collections import defaultdict
 from functools import cached_property
 from pathlib import Path
+from pydoc import Doc
+from typing import DefaultDict, List
 
 from spacy.language import Language
 from spacy.matcher import PhraseMatcher
@@ -27,26 +30,31 @@ class DomainVocabManager:
         self.vocabulary = self.config["vocabulary"]
 
     @cached_property
-    def matcher(self):
+    def matcher(self) -> PhraseMatcher:
         """Register all aliases into a spaCy PhraseMatcher (cached)."""
         matcher = PhraseMatcher(self.nlp.vocab, attr="LEMMA")
 
-        # collect all (canonical, alias) pairs
-        canonical_aliases = [
-            (canonical, alias)
+        # Collect aliases with their canonicals in one pass
+        alias_canonical_pairs = [
+            (alias, canonical)
             for entity_group in self.vocabulary.values()
             for canonical, aliases in entity_group.items()
             for alias in aliases
         ]
 
-        # batch-process aliases with nlp.pipe
-        alias_docs = list(self.nlp.pipe((alias for _, alias in canonical_aliases)))
+        # Early exit if no aliases
+        if not alias_canonical_pairs:
+            return matcher
 
-        # group docs by canonical and add to matcher
-        by_canonical = {}
-        for (canonical, _), doc in zip(canonical_aliases, alias_docs):
-            by_canonical.setdefault(canonical, []).append(doc)
+        # Extract just aliases for batch processing
+        alias_docs = list(self.nlp.pipe((alias for alias, _ in alias_canonical_pairs)))
 
+        # Group docs by canonical in one pass
+        by_canonical: DefaultDict[str, List[Doc]] = defaultdict(list)
+        for (_, canonical), doc in zip(alias_canonical_pairs, alias_docs):
+            by_canonical[canonical].append(doc)
+
+        # Add to matcher - batch add if possible
         for canonical, docs in by_canonical.items():
             matcher.add(canonical, docs)
 
