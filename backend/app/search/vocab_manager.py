@@ -2,11 +2,11 @@ import json
 from collections import defaultdict
 from functools import cached_property
 from pathlib import Path
-from pydoc import Doc
-from typing import DefaultDict, List
+from typing import DefaultDict, List, Dict
 
 from spacy.language import Language
 from spacy.matcher import PhraseMatcher
+from spacy.tokens import Doc
 
 
 def load_json(file_path: str):
@@ -61,12 +61,15 @@ class DomainVocabManager:
         return matcher
 
     @cached_property
-    def kw_to_cat(self):
-        """Map each canonical entry (e.g., 'movie') to its top-level category (e.g., 'type')."""
+    def dim_by_canon_orth(self) -> Dict[int, str]:
+        """Map each canonical term's orth ID to its top-level dimension."""
+        # Force matcher initialization to populate vocab with canonicals (IDs for PhraseMatcher patterns).
+        _ = self.matcher
+
         return {
-            keyword: category
-            for category, keywords in self.vocabulary.items()
-            for keyword in keywords
+            self.nlp.vocab.strings.add(canonical): dimension
+            for dimension, canonicals in self.vocabulary.items()
+            for canonical in canonicals
         }
 
     def extract_keywords(self, query: str):
@@ -76,8 +79,8 @@ class DomainVocabManager:
 
         for match_id, start, end in self.matcher(doc):
             canonical = self.nlp.vocab.strings[match_id]
-            category = self.kw_to_cat.get(canonical)
-            if category:
-                data.setdefault(category, set()).add(canonical)
+            dimension = self.dim_by_canon_orth.get(match_id)
+            if dimension:
+                data.setdefault(dimension, set()).add(canonical)
 
         return data
