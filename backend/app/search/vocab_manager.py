@@ -22,7 +22,15 @@ def load_json(file_path: str) -> dict:
 
 
 class DomainVocabManager:
-    """Loads a domain-specific vocabulary from JSON and manages it for query parsing."""
+    """
+    Loads a domain-specific vocabulary from JSON and manages it for query parsing.
+
+    Optimized to parse user queries and extract domain-specific
+    dimensions with confidence scores.
+    """
+
+    # Valid token POS tags for domain terms
+    VALID_POS_TAGS = {"NOUN", "ADJ", "PROPN", "NUM", "X", "ADV", "VERB"}
 
     def __init__(self, file_path: str, nlp: Language):
         """
@@ -39,7 +47,7 @@ class DomainVocabManager:
 
         # Load dimension labels from config
         labels = self.config["dimension_labels"]
-        self.SUBJECT = labels["SUBJECT"] # Required dimension, raise KeyError if missing.
+        self.SUBJECT = labels["SUBJECT"]  # Required dimension, raise KeyError if missing.
         self.CATEGORY = labels.get("CATEGORY", "category")
         self.SOURCE = labels.get("SOURCE", "source")
         self.TIMEFRAME = labels.get("TIMEFRAME", "timeframe")
@@ -97,15 +105,76 @@ class DomainVocabManager:
             for canonical in canonicals
         }
 
-    def extract_keywords(self, query: str) -> Dict[str, Set[str]]:
-        """Extract canonical keywords grouped by category from a query."""
-        doc = self.nlp(query.lower())
-        data: Dict[str, Set[str]] = {}
+    def extract_keywords(self, query: str) -> Dict[str, any]:
+        """
+        Extract canonical keywords grouped by dimension from a query.
 
-        for match_id, start, end in self.matcher(doc):
-            canonical = self.nlp.vocab.strings[match_id]
+        Args:
+            query: User query string (e.g., "best sci-fi thriller movies on Netflix")
+
+        Returns:
+            Dictionary with extracted dimensions and overall confidence score
+        """
+        # Process the query
+        doc = self.nlp(query.lower().strip())
+
+        # Find matches
+        matches = self.matcher(doc)
+        if not matches:
+            # No matches found, return default structure
+            return {
+                self.SUBJECT: self.default_subject,
+                self.CATEGORY: [],
+                self.SOURCE: [],
+                self.GEOGRAPHICAL: [],
+                self.TIMEFRAME: [],
+                "confidence": 0.0
+            }
+
+        # Initialize data structures
+        dim_labels = [self.SUBJECT, self.CATEGORY, self.SOURCE, self.GEOGRAPHICAL, self.TIMEFRAME]
+        data = {label: defaultdict(float) for label in dim_labels}
+
+        # Process each match and calculate basic confidence
+        for match_id, start, end in matches:
+            span = doc[start:end]
+
+            # Skip invalid POS tags
+            if span.root.pos_ not in self.VALID_POS_TAGS:
+                continue
+
             dimension = self.dim_by_canon_orth.get(match_id)
-            if dimension:
-                data.setdefault(dimension, set()).add(canonical)
+            if not dimension:
+                continue
 
-        return data
+            canonical = self.nlp.vocab.strings[match_id]
+
+            # Basic confidence (just 1.0 for now, will be enhanced later)
+            confidence = 1.0
+
+            data[dimension][canonical] = max(
+                data[dimension][canonical],
+                confidence
+            )
+
+        # Format final results with basic structure
+        result = {
+            self.SUBJECT: self._select_basic_subject(data),
+            self.CATEGORY: list(data[self.CATEGORY].keys()),
+            self.SOURCE: list(data[self.SOURCE].keys()),
+            self.GEOGRAPHICAL: list(data[self.GEOGRAPHICAL].keys()),
+            self.TIMEFRAME: list(data[self.TIMEFRAME].keys()),
+            "confidence": 50.0 if any(data[label] for label in dim_labels) else 0.0
+        }
+
+        return result
+
+    def _select_basic_subject(self, data: Dict[str, Dict[str, float]]) -> str:
+        """Select the best subject or return default."""
+        candidates = data[self.SUBJECT]
+
+        if not candidates:
+            return self.default_subject
+
+        # Return the first match for now
+        return next(iter(candidates))
