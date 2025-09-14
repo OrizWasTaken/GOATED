@@ -1,12 +1,13 @@
 {
   "schema_version": "1.0",
-  "entity_labels": {
-    "TYPE": "type",
-    "GENRE": "genre",
-    "PLATFORM": "platform",
-    "ERA": "era",
-    "REGION": "region"
+  "dimension_labels": {
+    "SUBJECT": "type",
+    "CATEGORY": "genre",
+    "SOURCE": "platform",
+    "TIMEFRAME": "era",
+    "GEOGRAPHICAL": "region"
   },
+  "default_subject": "movie",
   "vocabulary": {
     "type": {
       "movie": ["movie", "film", "feature", "motion picture", "tv movie"],
@@ -26,7 +27,7 @@
       "music": ["music", "musical"],
       "mystery": ["mystery", "whodunit", "suspense"],
       "romance": ["romance", "love"],
-      "sci_fi": ["sci-fi", "science fiction", "scifi", "futuristic", "cyberpunk"],
+      "sci_fi": ["sci-fi", "science fiction", "scifi" , "futuristic", "cyberpunk"],
       "sport": ["sport", "athletic"],
       "reality": ["reality-tv", "reality", "unscripted"],
       "thriller": ["thriller"],
@@ -57,7 +58,7 @@
       "us": ["us", "usa", "american", "u.s.", "u.s.a."],
       "uk": ["uk", "british", "britain", "england", "brit"],
       "japan": ["japan", "japanese"],
-      "south_korea": ["k-drama", "kdrama", "south korea", "korean"],
+      "south_korea": ["k-drama", "k-dramas", "kdrama", "kdramas", "south korea", "korean"],
       "india": ["india", "indian", "bollywood", "hindi"],
       "france": ["france", "french"],
       "germany": ["germany", "german"]
