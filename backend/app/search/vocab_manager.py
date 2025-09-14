@@ -2,14 +2,14 @@ import json
 from collections import defaultdict
 from functools import cached_property
 from pathlib import Path
-from typing import DefaultDict, List, Dict
+from typing import DefaultDict, List, Dict, Set, Tuple, Optional
 
 from spacy.language import Language
 from spacy.matcher import PhraseMatcher
 from spacy.tokens import Doc
 
 
-def load_json(file_path: str):
+def load_json(file_path: str) -> dict:
     """Load and validate a JSON file."""
     path = Path(file_path)
     if not path.exists():
@@ -25,9 +25,34 @@ class DomainVocabManager:
     """Loads a domain-specific vocabulary from JSON and manages it for query parsing."""
 
     def __init__(self, file_path: str, nlp: Language):
+        """
+        Initialize the DomainVocabManager.
+
+        Args:
+            file_path: Path to the domain vocabulary JSON file
+            nlp: Initialized spaCy Language model
+        """
         self.nlp = nlp
         self.config = load_json(file_path)
         self.vocabulary = self.config["vocabulary"]
+        self.default_subject = self.config["default_subject"] # Required dimension, raise KeyError if missing.
+
+        # Load dimension labels from config
+        labels = self.config["dimension_labels"]
+        self.SUBJECT = labels["SUBJECT"] # Required dimension, raise KeyError if missing.
+        self.CATEGORY = labels.get("CATEGORY", "category")
+        self.SOURCE = labels.get("SOURCE", "source")
+        self.TIMEFRAME = labels.get("TIMEFRAME", "timeframe")
+        self.GEOGRAPHICAL = labels.get("GEOGRAPHICAL", "geographical")
+
+        # Create reverse mapping for debugging
+        self.dimension_names = {
+            self.SUBJECT: "SUBJECT",
+            self.CATEGORY: "CATEGORY",
+            self.SOURCE: "SOURCE",
+            self.TIMEFRAME: "TIMEFRAME",
+            self.GEOGRAPHICAL: "GEOGRAPHICAL"
+        }
 
     @cached_property
     def matcher(self) -> PhraseMatcher:
@@ -35,7 +60,7 @@ class DomainVocabManager:
         matcher = PhraseMatcher(self.nlp.vocab, attr="LEMMA")
 
         # Collect aliases with their canonicals in one pass
-        alias_canonical_pairs = [
+        alias_canonical_pairs: List[Tuple[str, str]] = [
             (alias, canonical)
             for entity_group in self.vocabulary.values()
             for canonical, aliases in entity_group.items()
@@ -72,10 +97,10 @@ class DomainVocabManager:
             for canonical in canonicals
         }
 
-    def extract_keywords(self, query: str):
+    def extract_keywords(self, query: str) -> Dict[str, Set[str]]:
         """Extract canonical keywords grouped by category from a query."""
         doc = self.nlp(query.lower())
-        data: dict[str, set[str]] = {}
+        data: Dict[str, Set[str]] = {}
 
         for match_id, start, end in self.matcher(doc):
             canonical = self.nlp.vocab.strings[match_id]
