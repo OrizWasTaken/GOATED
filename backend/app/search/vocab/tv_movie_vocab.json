@@ -55,13 +55,9 @@
       "classic": ["classic", "classics", "all time", "all-time"]
     },
     "region": {
-      "us": ["us", "usa", "american", "hollywood", "u.s.", "u.s.a."],
-      "uk": ["uk", "british", "britain", "england", "brit"],
-      "japan": ["japan", "japanese"],
-      "south_korea": ["k-drama", "k-dramas", "kdrama", "kdramas", "south korea", "korean"],
-      "india": ["india", "indian", "bollywood", "hindi"],
-      "france": ["france", "french"],
-      "germany": ["germany", "german"]
+      "us": ["hollywood"],
+      "south_korea": ["k-drama", "k-dramas", "kdrama", "kdramas"],
+      "india": ["bollywood"]
     }
   }
 }
