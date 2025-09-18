@@ -1,0 +1,353 @@
+{
+  "schema_version": "1.0",
+  "afghanistan": [
+    "afghan",
+    "afghans",
+    "afghanistan",
+    "pashto"
+  ],
+  "argentina": [
+    "argentinian",
+    "argentinians",
+    "argentina"
+  ],
+  "australia": [
+    "australian",
+    "australians",
+    "aussie",
+    "aussies"
+  ],
+  "austria": [
+    "austrian",
+    "austrians",
+    "austria"
+  ],
+  "bangladesh": [
+    "bangladeshi",
+    "bangladeshis",
+    "bangladesh",
+    "bengali"
+  ],
+  "belgium": [
+    "belgian",
+    "belgians",
+    "belgium",
+    "flemish"
+  ],
+  "brazil": [
+    "brazilian",
+    "brazilians",
+    "brasil"
+  ],
+  "bulgaria": [
+    "bulgarian",
+    "bulgarians",
+    "bulgaria"
+  ],
+  "canada": [
+    "canadian",
+    "canadians"
+  ],
+  "chile": [
+    "chilean",
+    "chileans",
+    "chile"
+  ],
+  "china": [
+    "chinese",
+    "china",
+    "mandarin"
+  ],
+  "colombia": [
+    "colombian",
+    "colombians",
+    "colombia"
+  ],
+  "croatia": [
+    "croatian",
+    "croatians",
+    "croatia"
+  ],
+  "czech republic": [
+    "czech",
+    "czechia"
+  ],
+  "denmark": [
+    "danish",
+    "dane",
+    "danes",
+    "denmark"
+  ],
+  "egypt": [
+    "egyptian",
+    "egyptians",
+    "egypt"
+  ],
+  "ethiopia": [
+    "ethiopian",
+    "ethiopians",
+    "ethiopia",
+    "amharic"
+  ],
+  "finland": [
+    "finnish",
+    "finn",
+    "finns",
+    "finland",
+    "suomi"
+  ],
+  "france": [
+    "french",
+    "francia"
+  ],
+  "germany": [
+    "german",
+    "germans",
+    "deutschland"
+  ],
+  "ghana": [
+    "ghanaian",
+    "ghanaians",
+    "ghana",
+    "twi"
+  ],
+  "greece": [
+    "greek",
+    "greeks",
+    "greece"
+  ],
+  "hungary": [
+    "hungarian",
+    "hungarians",
+    "hungary",
+    "magyar"
+  ],
+  "india": [
+    "indian",
+    "indians",
+    "india",
+    "hindi"
+  ],
+  "indonesia": [
+    "indonesian",
+    "indonesians",
+    "indonesia"
+  ],
+  "iran": [
+    "iranian",
+    "iranians",
+    "persian",
+    "persians",
+    "iran",
+    "farsi"
+  ],
+  "iraq": [
+    "iraqi",
+    "iraqis",
+    "iraq"
+  ],
+  "ireland": [
+    "irish",
+    "ireland",
+    "gaelic"
+  ],
+  "israel": [
+    "israeli",
+    "israelis",
+    "israel",
+    "hebrew"
+  ],
+  "italy": [
+    "italian",
+    "italians",
+    "italia"
+  ],
+  "japan": [
+    "japanese",
+    "japan"
+  ],
+  "jordan": [
+    "jordanian",
+    "jordanians",
+    "jordan"
+  ],
+  "kenya": [
+    "kenyan",
+    "kenyans",
+    "kenya",
+    "swahili"
+  ],
+  "lebanon": [
+    "lebanese",
+    "lebanon"
+  ],
+  "malaysia": [
+    "malaysian",
+    "malaysians",
+    "malaysia",
+    "malay"
+  ],
+  "mexico": [
+    "mexican",
+    "mexicans",
+    "mexico"
+  ],
+  "morocco": [
+    "moroccan",
+    "moroccans",
+    "morocco"
+  ],
+  "nepal": [
+    "nepalese",
+    "nepali",
+    "nepal"
+  ],
+  "netherlands": [
+    "dutch",
+    "holland",
+    "netherlands"
+  ],
+  "new zealand": [
+    "kiwi",
+    "kiwis",
+    "new zealand",
+    "maori"
+  ],
+  "nigeria": [
+    "nigerian",
+    "nigerians",
+    "nigeria"
+  ],
+  "norway": [
+    "norwegian",
+    "norwegians",
+    "norway"
+  ],
+  "pakistan": [
+    "pakistani",
+    "pakistanis",
+    "pakistan",
+    "urdu"
+  ],
+  "peru": [
+    "peruvian",
+    "peruvians",
+    "peru",
+    "quechua"
+  ],
+  "philippines": [
+    "filipino",
+    "filipinos",
+    "philippines",
+    "tagalog"
+  ],
+  "poland": [
+    "polish",
+    "poland"
+  ],
+  "portugal": [
+    "portuguese",
+    "portugal"
+  ],
+  "romania": [
+    "romanian",
+    "romanians",
+    "romania"
+  ],
+  "russia": [
+    "russian",
+    "russians",
+    "russia"
+  ],
+  "saudi arabia": [
+    "saudi",
+    "saudis",
+    "saudi arabia"
+  ],
+  "serbia": [
+    "serbian",
+    "serbians",
+    "serbia"
+  ],
+  "singapore": [
+    "singaporean",
+    "singaporeans",
+    "singapore"
+  ],
+  "south africa": [
+    "south african",
+    "south africans",
+    "south africa",
+    "afrikaans"
+  ],
+  "south korea": [
+    "korean",
+    "koreans",
+    "south korea"
+  ],
+  "spain": [
+    "spanish",
+    "espana"
+  ],
+  "sri lanka": [
+    "sri lankan",
+    "sri lankans",
+    "sri lanka",
+    "sinhala"
+  ],
+  "sweden": [
+    "swedish",
+    "swede",
+    "swedes",
+    "sweden"
+  ],
+  "switzerland": [
+    "swiss",
+    "switzerland"
+  ],
+  "thailand": [
+    "thai",
+    "thailand"
+  ],
+  "turkey": [
+    "turkish",
+    "turkey"
+  ],
+  "ukraine": [
+    "ukrainian",
+    "ukrainians",
+    "ukraine"
+  ],
+  "united arab emirates": [
+    "emirati",
+    "emiratis",
+    "uae",
+    "emirates"
+  ],
+  "united kingdom": [
+    "uk",
+    "u.k",
+    "britain",
+    "british",
+    "england",
+    "english"
+  ],
+  "united states": [
+    "america",
+    "u.s.a",
+    "u.s",
+    "us",
+    "usa",
+    "american",
+    "americans"
+  ],
+  "venezuela": [
+    "venezuelan",
+    "venezuelans",
+    "venezuela"
+  ],
+  "vietnam": [
+    "vietnamese",
+    "vietnam"
+  ]
+}
