@@ -1,15 +1,16 @@
+import re
 import json
 from collections import defaultdict
 from functools import cached_property
 from pathlib import Path
-from typing import Dict, List, Set, Tuple
+from typing import Any
 
 from spacy.language import Language
 from spacy.matcher import PhraseMatcher
 from spacy.tokens import Token, Doc, Span
 
 
-def load_json(file_path: str) -> dict:
+def load_json(file_path: str) -> dict[str, str | list[str] | dict[str, Any]]:
     """Load and validate a JSON file."""
     path = Path(file_path)
     if not path.exists():
@@ -20,6 +21,44 @@ def load_json(file_path: str) -> dict:
     except json.JSONDecodeError as e:
         raise ValueError(f'"{path}" is not a valid JSON file. {e}')
 
+
+# Load mappings and build lookup tables
+def build_lookup(mappings: dict[str, Any]) -> dict[str, str]:
+    return {
+        term.lower(): key
+        for key, terms in mappings.items()
+        if isinstance(terms, list)
+        for term in terms
+    }
+
+country_mappings = load_json(r"vocab/country_mappings.json")
+timeline_mappings = load_json(r"vocab/timeline_mappings.json")
+
+country_lookup = build_lookup(country_mappings)
+timeline_lookup = build_lookup(timeline_mappings)
+
+# Compile regex patterns
+def create_pattern(lookup: dict[str, str]) -> re.Pattern[str]:
+    return re.compile(
+        r'\b(' + '|'.join(re.escape(term) for term in lookup.keys()) + r')\b',
+        re.IGNORECASE
+    )
+
+country_pattern = create_pattern(country_lookup)
+timeline_lookup = create_pattern(timeline_lookup)
+
+year_pattern = re.compile(
+    r'\b(?:(?:19|20)\d{2}\'?s|\d{2}\'?s|(?:19|20)\d{2})\b',
+    re.IGNORECASE
+)
+
+def extract_regions(query: str) -> list[str]:
+    """Extract all country/region mentions from text."""
+    return [country_lookup[match.lower()] for match in country_pattern.findall(query)]
+
+def extract_timelines(query: str) -> list[str]:
+    """Extract all date mentions from text."""
+    return year_pattern.findall(query) + timeline_lookup.findall(query)
 
 class DomainVocabManager:
     """
@@ -35,11 +74,11 @@ class DomainVocabManager:
     # Dependency confidence maps optimized for movie domain
     dep_confidences = {
         "SUBJECT": {
-            "ROOT": 1.5,  # Main verb object (e.g., "watch movies")
+            "ROOT": 1.5,  # Root word
             "dobj": 1.2,  # Direct object (e.g., "best movies")
-            "nsubj": 0.8, # Nominal subject
+            "nsubj": 0.8,  # Nominal subject
             "pobj": 0.2,  # Object of preposition (e.g., "for movies")
-            "attr": 0.15, # Attribute
+            "attr": 0.15,  # Attribute
         },
         "CATEGORY": {
             "conj": 0.5,  # Conjunction (e.g., "action and thriller")
@@ -49,38 +88,23 @@ class DomainVocabManager:
             "pobj": 1.0,  # Object of preposition (e.g., "on Netflix")
             "prep": 0.8,  # Prepositional modifier
             "nmod": 0.6,  # Nominal modifier
-            "conj": 0.4   # Conjunction (e.g., "Netflix and Hulu")
+            "conj": 0.4  # Conjunction (e.g., "Netflix and Hulu")
         },
-        "TIMEFRAME": {
-            "nummod": 1.0,  # Numeric modifier (e.g., "2024 movies")
-            "amod": 0.8,    # Adjectival modifier (e.g., "recent movies")
-            "pobj": 0.6,    # Object of preposition (e.g., "from 2020s")
-            "nmod": 0.5,    # Nominal modifier
-            "npadvmod": 0.7 # Noun phrase as adverbial modifier
-        },
-        "GEOGRAPHICAL": {
-            "compound": 0.8,  # Compound (e.g., "Bollywood films")
-            "nmod": 0.6,      # Nominal modifier
-            "pobj": 0.5       # Object of preposition
-        }
     }
 
     # Confidence thresholds for dimension selection
     thresholds = {
-        "SUBJECT": 2.0,      # Min: pass tag analysis + reasonable dependency pattern.
-        "CATEGORY": 2.0,     # Min: pass POS patterns + context analysis.
-        "SOURCE": 2.5,       # High emphasis on domain's vocabulary.
-        "GEOGRAPHICAL": 1.0,
-        "TIMEFRAME": 0.8,
+        "SUBJECT": 2.0,  # Minimum: Tag analysis & reasonable dependency pattern.
+        "CATEGORY": 2.0,  # Minimum: POS patterns & context analysis.
+        "SOURCE": 2.5,  # High emphasis on domain's vocabulary.
     }
 
     # Weights for overall confidence calculation
     dimension_weights = {
-        "SUBJECT": 0.50,  # Type (movie/series) is very important (50%)
-        "CATEGORY": 0.25,  # Genre is quite important (25%)
-        "SOURCE": 0.15,  # Platform is moderately important (15%)
-        "GEOGRAPHICAL": 0.10,  # Region is less important (10%)
-        "TIMEFRAME": 0.0,  # Era isn't important (0%)
+        "SUBJECT": 0.45,  # Subject (movie/book) is very important (40%)
+        "CATEGORY": 0.2,  # Category (thriller/non-fiction) is quite important (20%)
+        "SOURCE": 0.2,  # Source (Netflix, Udemy) is quite important (20%)
+        "GEOGRAPHICAL": 0.15,  # Geographical hints (k-drama, hollywood) can be important (15%)
     }
 
     def __init__(self, file_path: str, nlp: Language):
@@ -97,11 +121,10 @@ class DomainVocabManager:
         self.default_subject = self.config["default_subject"]
 
         # Load dimension labels from config
-        labels = self.config["dimension_labels"]
-        self.SUBJECT = labels["SUBJECT"] # Required dimension, raise KeyError if missing.
+        labels = self.config["dimension_labels"] # Required key, raise KeyError if missing.
+        self.SUBJECT = labels["SUBJECT"]  # Required dimension, raise KeyError if missing.
         self.CATEGORY = labels.get("CATEGORY", "category")
         self.SOURCE = labels.get("SOURCE", "source")
-        self.TIMEFRAME = labels.get("TIMEFRAME", "timeframe")
         self.GEOGRAPHICAL = labels.get("GEOGRAPHICAL", "geographical")
 
         # Create reverse mapping for debugging
@@ -109,7 +132,6 @@ class DomainVocabManager:
             self.SUBJECT: "SUBJECT",
             self.CATEGORY: "CATEGORY",
             self.SOURCE: "SOURCE",
-            self.TIMEFRAME: "TIMEFRAME",
             self.GEOGRAPHICAL: "GEOGRAPHICAL"
         }
 
@@ -145,7 +167,7 @@ class DomainVocabManager:
         return matcher
 
     @cached_property
-    def dim_by_canon_orth(self) -> Dict[int, str]:
+    def dim_by_canon_orth(self) -> dict[int, str]:
         """Map each canonical term's orth ID to its dimension."""
         _ = self.matcher  # Force matcher initialization
 
@@ -157,7 +179,7 @@ class DomainVocabManager:
 
         return mapping
 
-    def extract_keywords(self, query: str) -> Dict[str, any]:
+    def extract_keywords(self, query: str) -> dict[str, str | float | list[str]]:
         """
         Extract canonical keywords grouped by dimension from a query.
 
@@ -165,26 +187,33 @@ class DomainVocabManager:
             query: User query string (e.g., "best sci-fi thriller movies on Netflix")
 
         Returns:
-            Dictionary with extracted dimensions and overall confidence score
+            dictionary with extracted dimensions and overall confidence score
         """
+        # Create local aliases for dimension labels.
+        subject = self.SUBJECT
+        category = self.CATEGORY
+        source = self.SOURCE
+        geographical = self.GEOGRAPHICAL
+
         # Process the query
-        doc = self.nlp(query.lower().strip())
+        query = query.lower().strip()
+        doc = self.nlp(query)
 
         # Find matches
         matches = self.matcher(doc)
         if not matches:
             # No matches found, return default structure
             return {
-                self.SUBJECT: self.default_subject,
-                self.CATEGORY: [],
-                self.SOURCE: [],
-                self.GEOGRAPHICAL: [],
-                self.TIMEFRAME: [],
+                subject: self.default_subject,
+                category: [],
+                source: [],
+                geographical: [],
+                "timeframe": [],
                 "confidence": 0.0
             }
 
         # Initialize data structures
-        dim_labels = [self.SUBJECT, self.CATEGORY, self.SOURCE, self.GEOGRAPHICAL, self.TIMEFRAME]
+        dim_labels = (subject, category, source, geographical)
         data = {label: defaultdict(float) for label in dim_labels}
         confidences_dict = {}
 
@@ -193,45 +222,71 @@ class DomainVocabManager:
         ent_label_by_tok = self._ent_label_by_tok(doc)
 
         # Process each match
-        for match_id, start, end in matches:
-            span = doc[start:end]
-
-            # Skip invalid POS tags
-            if span.root.pos_ not in self.VALID_POS_TAGS:
-                continue
-
-            dimension = self.dim_by_canon_orth.get(match_id)
-            if not dimension:
-                continue
-
-            canonical = self.nlp.vocab.strings[match_id]
-
-            # Calculate confidences for all dimensions
-            confidences = self._calculate_all_confidences(
-                span, doc, dim_by_tok, ent_label_by_tok
-            )
-
-            # Update maximum confidence for each dimension
-            for dim_label, confidence in confidences.items():
-                if confidence > 0:
-                    data[dim_label][canonical] = max(
-                        data[dim_label][canonical],
-                        confidence
-                    )
+        for match in matches:
+            self._process_match(doc, match, data, dim_by_tok, ent_label_by_tok)
 
         # Format final results
         result = {
-            self.SUBJECT: self._select_subject(data, confidences_dict),
-            self.CATEGORY: self._filter_dimension(self.CATEGORY, data, confidences_dict),
-            self.SOURCE: self._filter_dimension(self.SOURCE, data, confidences_dict),
-            self.GEOGRAPHICAL: self._filter_dimension(self.GEOGRAPHICAL, data, confidences_dict),
-            self.TIMEFRAME: self._filter_dimension(self.TIMEFRAME, data, confidences_dict),
+            subject: self._select_subject(subject, data, confidences_dict),
+            category: self._filter_dimension(category, data, confidences_dict),
+            source: self._filter_dimension(source, data, confidences_dict),
+            geographical: self._filter_dimension(geographical, data, confidences_dict) + extract_regions(query),
+            "timeframe": extract_timelines(query),
             "confidence": self._calculate_overall_confidence(confidences_dict, doc)
         }
 
         return result
 
-    def _dim_by_tok(self, matches: List[Tuple[int, int, int]]) -> Dict[int, Set[str]]:
+    def _process_match(
+            self, doc: Doc,
+            match: tuple[int, int, int],
+            data: dict[str, dict[str, float]],
+            dim_by_tok: dict[int, set[str]],
+            ent_label_by_tok: dict[int, set[str]]
+    ) -> None:
+        """
+        Process a single vocabulary match and update confidence data.
+
+        Validates the match, calculates confidence scores across all dimensions,
+        and updates the data structure. A single canonical term can contribute
+        confidence to multiple dimensions based on linguistic context analysis.
+
+        Args:
+            doc: The spaCy Doc object containing the query
+            match: tuple of (match_id, start, end) from PhraseMatcher
+            data: dictionary mapping dimension labels to canonical terms and confidences
+            dim_by_tok: Mapping of token indices to their matched dimensions
+            ent_label_by_tok: Mapping of token indices to their spaCy entity labels
+        """
+        match_id, start, end = match
+        span = doc[start:end]
+
+        # Skip invalid POS tags
+        if span.root.pos_ not in self.VALID_POS_TAGS:
+            return None
+
+        dimension = self.dim_by_canon_orth.get(match_id)
+        if not dimension:
+            return None
+
+        canonical = self.nlp.vocab.strings[match_id]
+
+        # Calculate confidences for all dimensions
+        confidences = self._calculate_all_confidences(
+            span, doc, dim_by_tok, ent_label_by_tok
+        )
+
+        # Update maximum confidence for each dimension
+        for dim_label, confidence in confidences.items():
+            if confidence > 0:
+                data[dim_label][canonical] = max(
+                    data[dim_label][canonical],
+                    confidence
+                )
+
+        return None
+
+    def _dim_by_tok(self, matches: list[tuple[int, int, int]]) -> dict[int, set[str]]:
         """Map token indices to their dimensions."""
         dim_by_tok = defaultdict(set)
 
@@ -244,11 +299,16 @@ class DomainVocabManager:
         return dict(dim_by_tok)
 
     @staticmethod
-    def _ent_label_by_tok(doc: Doc) -> Dict[int, Set[str]]:
+    def _ent_label_by_tok(doc: Doc) -> dict[int, set[str]]:
         """Map token indices to their spaCy entity labels."""
-        ent_by_tok = defaultdict(set)
+        entities = doc.ents
 
-        for ent in doc.ents:
+        # Early exit if no entities.
+        if not entities:
+            return {}
+
+        ent_by_tok = defaultdict(set)
+        for ent in entities:
             for i in range(ent.start, ent.end):
                 ent_by_tok[i].add(ent.label_)
 
@@ -256,9 +316,9 @@ class DomainVocabManager:
 
     def _calculate_all_confidences(
             self, span: Span, doc: Doc,
-            dim_by_tok: Dict[int, Set[str]],
-            ent_label_by_tok: Dict[int, Set[str]]
-    ) -> Dict[str, float]:
+            dim_by_tok: dict[int, set[str]],
+            ent_label_by_tok: dict[int, set[str]]
+    ) -> dict[str, float]:
         """Calculate confidence scores for all dimensions."""
         root = span.root
         context_tokens = self._get_context_tokens(span, doc, window=1)
@@ -273,11 +333,10 @@ class DomainVocabManager:
             self.SUBJECT: self._calc_subject_confidence(root, dim_by_tok, context_dims),
             self.CATEGORY: self._calc_category_confidence(root, dim_by_tok, context_dims),
             self.SOURCE: self._calc_source_confidence(root, dim_by_tok, ent_label_by_tok),
-            self.GEOGRAPHICAL: self._calc_geographical_confidence(root, span, dim_by_tok, ent_label_by_tok),
-            self.TIMEFRAME: self._calc_timeframe_confidence(root, span, dim_by_tok),
+            self.GEOGRAPHICAL: 2.5 if self.GEOGRAPHICAL in dim_by_tok.get(root.i, []) else 0.0
         }
 
-    def _calc_subject_confidence(self, root: Token, dim_by_tok: Dict[int, Set[str]], context_dims: Set[str]) -> float:
+    def _calc_subject_confidence(self, root: Token, dim_by_tok: dict[int, set[str]], context_dims: set[str]) -> float:
         """Calculate confidence for subject dimension (movie, series etc)."""
         confidence = 0.0
 
@@ -303,13 +362,13 @@ class DomainVocabManager:
 
         return confidence
 
-    def _calc_category_confidence(self, root: Token, dim_by_tok: Dict[int, Set[str]], context_dims: Set[str]) -> float:
+    def _calc_category_confidence(self, root: Token, dim_by_tok: dict[int, set[str]], context_dims: set[str]) -> float:
         """Calculate confidence for category dimension."""
         confidence = 0.0
         tok_dimensions = dim_by_tok.get(root.i, [])
 
         # Skip if token is already of another dimension.
-        if {self.SUBJECT, self.SOURCE, self.GEOGRAPHICAL, self.TIMEFRAME} & tok_dimensions:
+        if {self.SUBJECT, self.SOURCE, self.GEOGRAPHICAL} & tok_dimensions:
             return 0.0
 
         # Direct dimension match
@@ -335,15 +394,12 @@ class DomainVocabManager:
 
     def _calc_source_confidence(
             self, root: Token,
-            dim_by_tok: Dict[int, Set[str]],
-            ent_label_by_tok: Dict[int, Set[str]]
+            dim_by_tok: dict[int, set[str]],
+            ent_label_by_tok: dict[int, set[str]]
     ) -> float:
         """Calculate confidence for source/platform dimension."""
         confidence = 0.0
         tok_dimensions = dim_by_tok.get(root.i, [])
-
-        if {self.SUBJECT, self.CATEGORY, self.GEOGRAPHICAL, self.TIMEFRAME} & tok_dimensions:
-            return 0.0
 
         # Direct dimension match
         if self.SOURCE in tok_dimensions:
@@ -362,89 +418,13 @@ class DomainVocabManager:
 
         return confidence
 
-    def _calc_geographical_confidence(
-            self, root: Token,
-            dim_by_tok: Dict[int, Set[str]],
-            ent_label_by_tok: Dict[int, Set[str]]
-    ) -> float:
-        """Calculate confidence for geographical/region dimension."""
-        confidence = 0.0
-        tok_dimensions = dim_by_tok.get(root.i, [])
-
-        # Skip if token is source or category
-        if {self.SOURCE, self.CATEGORY} & tok_dimensions:
-            return 0.0
-
-        # Direct dimension match
-        if self.GEOGRAPHICAL in tok_dimensions:
-            confidence += 2.0
-
-        # Entity type analysis
-        tok_labels = ent_label_by_tok.get(root.i, [])
-        if "GPE" in tok_labels:  # Geopolitical entity
-            confidence += 1.5
-        if "NORP" in tok_labels:  # Nationality
-            confidence += 1.0
-
-        # Adjectives that are often geographical
-        if root.pos_ == "ADJ" and root.dep_ == "amod":
-            # Check if it modifies a subject term
-            if root.head and self.SUBJECT in dim_by_tok.get(root.head.i, []):
-                confidence += 0.8
-
-        # Dependency patterns
-        confidence += self.dep_confidences["GEOGRAPHICAL"].get(root.dep_, 0)
-
-        return confidence
-
-    def _calc_timeframe_confidence(
-            self, root: Token, span: Span,
-            dim_by_tok: Dict[int, Set[str]]
-    ) -> float:
-        """Calculate confidence for timeframe/era dimension."""
-        confidence = 0.0
-
-        # Direct dimension match
-        if self.TIMEFRAME in dim_by_tok.get(root.i, []):
-            confidence += 2.5
-
-            # Era-specific bonuses
-            era_text = span.text.lower()
-            if era_text in ["latest", "recent", "new", "classic"]:
-                confidence += 0.5
-
-        # Temporal adjectives
-        if root.pos_ == "ADJ":
-            temporal_adjs = {"recent", "latest", "new", "old", "classic", "modern",
-                             "contemporary", "current", "upcoming", "retro", "vintage"}
-            if root.text.lower() in temporal_adjs:
-                confidence += 1.5
-
-        # Year/decade patterns
-        text = root.text
-        if root.like_num or text.isdigit():
-            # Check for year patterns (1990-2099)
-            if len(text) == 4 and text.startswith(("19", "20")):
-                confidence += 2.0
-            # Decade patterns (90s, 2010s)
-            elif text.endswith("s") and text[:-1].isdigit():
-                confidence += 1.8
-
-        # Date entities
-        if root.ent_type_ == "DATE":
-            confidence += 1.5
-
-        # Dependency patterns
-        confidence += self.dep_confidences["TIMEFRAME"].get(root.dep_, 0)
-
-        return confidence
-
     def _select_subject(
-            self, data: Dict[str, Dict[str, float]],
-            confidence_dict: Dict[str, float]
+            self, subj_label: str,
+            data: dict[str, dict[str, float]],
+            confidence_dict: dict[str, float]
     ) -> str:
         """Select the best subject with the highest confidence."""
-        candidates = data[self.SUBJECT]
+        candidates = data[subj_label]
         default_subject = self.default_subject
 
         if not candidates:
@@ -456,12 +436,12 @@ class DomainVocabManager:
 
         # Check threshold
         if best_confidence >= self.thresholds["SUBJECT"]:
-            confidence_dict[self.SUBJECT] = best_confidence
+            confidence_dict[subj_label] = best_confidence
 
             # Verify it's actually a subject dimension term
             if best_subject in self.nlp.vocab.strings:
                 orth_id = self.nlp.vocab.strings[best_subject]
-                if self.dim_by_canon_orth.get(orth_id) == self.SUBJECT:
+                if self.dim_by_canon_orth.get(orth_id) == subj_label:
                     return best_subject
 
         # Use default if no valid subject found
@@ -469,9 +449,9 @@ class DomainVocabManager:
 
     def _filter_dimension(
             self, dimension_label: str,
-            data: Dict[str, Dict[str, float]],
-            confidence_dict: Dict[str, float]
-    ) -> List[str]:
+            data: dict[str, dict[str, float]],
+            confidence_dict: dict[str, float]
+    ) -> list[str]:
         """Filter and select terms for a dimension based on confidence threshold."""
         candidates = data[dimension_label]
 
@@ -509,10 +489,7 @@ class DomainVocabManager:
 
         return selected
 
-    def _calculate_overall_confidence(
-            self, confidences: Dict[str, float],
-            doc: Doc
-    ) -> float:
+    def _calculate_overall_confidence(self, confidences: dict[str, float], doc: Doc) -> float:
         """
         Calculate overall domain confidence (0-100 scale).
 
@@ -527,7 +504,6 @@ class DomainVocabManager:
             self.CATEGORY: self.dimension_weights["CATEGORY"],
             self.SOURCE: self.dimension_weights["SOURCE"],
             self.GEOGRAPHICAL: self.dimension_weights["GEOGRAPHICAL"],
-            self.TIMEFRAME: self.dimension_weights["TIMEFRAME"],
         }
 
         # Calculate weighted score
@@ -537,8 +513,8 @@ class DomainVocabManager:
 
         for label, weight in weights_map.items():
             if label in confidences and confidences[label] > 0:
-                # Normalize confidence (assuming max ~5.0)
-                normalized = min(confidences[label] / 5.0, 1.0)
+                # Normalize confidence (assuming max ~6.0)
+                normalized = min(confidences[label] / 6.0, 1.0)
                 weighted_sum += normalized * weight
                 total_weight += weight
                 dimension_count += 1
