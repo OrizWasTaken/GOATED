@@ -46,14 +46,6 @@
       "youtube": ["youtube", "youtube movies", "yt"],
       "imdb_tv": ["imdb", "imdb tv"]
     },
-    "era": {
-      "latest": ["latest", "new", "newest", "recent", "recently released", "new releases"],
-      "2020s": ["2020s", "2020's", "2020s movies", "2020s shows", "2020"],
-      "2010s": ["2010s", "2010's", "2010"],
-      "2000s": ["2000s", "2000's", "2000"],
-      "1990s": ["1990s", "90s", "1990's", "90's"],
-      "classic": ["classic", "classics", "all time", "all-time"]
-    },
     "region": {
       "us": ["hollywood"],
       "south_korea": ["k-drama", "k-dramas", "kdrama", "kdramas"],
