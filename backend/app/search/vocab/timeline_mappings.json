@@ -1,0 +1,19 @@
+{
+  "schema_version": "1.0",
+  "latest": [
+    "latest",
+    "new",
+    "newest",
+    "recent",
+    "recently released",
+    "new releases",
+    "just released",
+    "right now"
+  ],
+  "classic": [
+    "classic",
+    "classics",
+    "all time",
+    "all-time"
+  ]
+}
