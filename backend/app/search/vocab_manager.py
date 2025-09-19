@@ -321,7 +321,11 @@ class DomainVocabManager:
     ) -> dict[str, float]:
         """Calculate confidence scores for all dimensions."""
         root = span.root
-        context_tokens = self._get_context_tokens(span, doc, window=1)
+
+        # Get surrounding tokens within a window size of 1.
+        start = max(0, span.start - 1)
+        end = min(len(doc), span.end + 2)
+        context_tokens =  doc[start:end]
 
         # Analyze context
         context_dims = set()
@@ -548,10 +552,3 @@ class DomainVocabManager:
 
         # Cap at 100
         return min(100.0, max(0.0, base_confidence))
-
-    @staticmethod
-    def _get_context_tokens(span: Span, doc: Doc, window: int = 2) -> Span:
-        """Get surrounding tokens within window size."""
-        start = max(0, span.start - window)
-        end = min(len(doc), span.end + window + 1)
-        return doc[start:end]
