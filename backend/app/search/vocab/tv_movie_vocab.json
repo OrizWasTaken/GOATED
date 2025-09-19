@@ -48,7 +48,7 @@
     },
     "region": {
       "us": ["hollywood"],
-      "south_korea": ["k-drama", "k-dramas", "kdrama", "kdramas"],
+      "south_korea": ["k-drama", "k-dramas", "kdrama", "kdramas", "korean drama"],
       "india": ["bollywood"]
     }
   }
